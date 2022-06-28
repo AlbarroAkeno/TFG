@@ -60,9 +60,9 @@ public class Principal {
 	private TreeMap<String, HashSet<OWLEntity>> mapeo;
 	private TreeMap<String, Integer> axiomas;
 	private int todos;
-	private long tiempostar;
-	private long tiempobot;
-	private long tiempotop;
+	private Long tiempostar;
+	private Long tiempobot;
+	private Long tiempotop;
 	private String rutaGuardado;
 	//private String metod;
 	
@@ -123,9 +123,9 @@ public class Principal {
 		this.introducidosTop =  new HashSet<OWLAxiom>();
 		this.axiomas = new TreeMap<String, Integer>();
 		this.todos = 0;
-		this.tiempostar = 0;
-		this.tiempobot = 0;
-		this.tiempotop = 0;
+		this.tiempostar = new Long(0);
+		this.tiempobot = new Long(0);
+		this.tiempotop = new Long(0);
 		
 		/*
 		try {
@@ -233,10 +233,25 @@ public class Principal {
 	
 	public int completaOntologiaMetodo(String metodo) {
 		ModuleType m = null;
+		Long tiempo = null;
+		Set<OWLAxiom> conjunto = null;
+		
 		//this.metod = metodo;
-		if (metodo.equals("star")) m = ModuleType.STAR;
-		else if (metodo.equals("bot")) m = ModuleType.BOT;
-		else if (metodo.equals("top")) m = ModuleType.TOP;
+		if (metodo.equals("star")) {
+			m = ModuleType.STAR;
+			tiempo = this.tiempostar;
+			conjunto = introducidosStar;
+		}
+		else if (metodo.equals("bot")) {
+			m = ModuleType.BOT;
+			tiempo = this.tiempobot;
+			conjunto = introducidosBot;
+		}
+		else if (metodo.equals("top")) {
+			m = ModuleType.TOP;
+			tiempo = this.tiempotop;
+			conjunto = introducidosTop;
+		}
 		else {
 			System.err.println("Metodo introducido no valido. Por favor introduzca Star, Bot, Top");
 			log.println("Metodo introducido no valido: " + metodo);
@@ -251,7 +266,8 @@ public class Principal {
 				String URIReserva = e.getKey() + ".owl";
 				String URIbien = URIReserva.toLowerCase();
 				IRI ontologia = IRI.create(URIbien);
-				TareaObtenModulo tarea = new TareaObtenModulo(m, ontologia, e.getValue());
+				File guardmol = new File(this.rutaGuardado+metodo+ e.getKey().replaceAll("<|>|:|\\.|\\/", "")+".owl");
+				TareaObtenModulo tarea = new TareaObtenModulo(m, ontologia, e.getValue(),log, guardmol, tiempo);
 				Future<Set<OWLAxiom>> result = executor.submit(new JobExecutor(tarea));
 				futureAxiomasPorOntologia.put(ontologia, result);
 			}
@@ -269,7 +285,11 @@ public class Principal {
 		for (IRI ontologiaUsada : axiomasPorOntologia.keySet()) {
 			Set<OWLAxiom> axiomasModulo = axiomasPorOntologia.get(ontologiaUsada);
 			if (axiomasModulo != null) {
-				this.resultadoCompleto.add(axiomasModulo);
+				if (metodo.equals("star")) this.resultadoCompleto.add(axiomasModulo);
+				else if (metodo.equals("bot")) this.bot.add(axiomasModulo);
+				else if (metodo.equals("top")) this.top.add(axiomasModulo);
+				conjunto.addAll(axiomasModulo);
+				
 			} else {
 				System.out.println("No modulo para " + ontologiaUsada.toQuotedString());
 			}
@@ -381,140 +401,10 @@ public class Principal {
 	
 	public void completaOntologia () {
 				
-		for (Entry<String, HashSet<OWLEntity>> e : this.mapeo.entrySet()) {
-			if (!this.Original.getOntologyID().toString().contains(e.getKey().toLowerCase()) && e.getKey() != null && !e.getKey().equals("")) {
-				//pruebasmap.println(e.getKey());
-				String URIReserva = e.getKey() + ".owl";
-				String URIbien = URIReserva.toLowerCase();
-				IRI ontologia = IRI.create(URIbien);
-				IRI teemporal = IRI.create("PRUEBA");
-				IRI top = IRI.create("TOP");
-				IRI bot = IRI.create("BOT");
+		completaOntologiaMetodo("star");
+		completaOntologiaMetodo("bot");
+		completaOntologiaMetodo("top");
 				
-
-				
-				try {
-					//File guardstar = new File("C:\\Users\\ï¿½lvaro\\Documents\\TFG\\alvaro\\intermedias\\STAR_"+ e.getKey().replaceAll("<|>|:|\\.|\\/", "")+".owl");
-					File guardstar = new File(this.rutaGuardado+"STAR_"+ e.getKey().replaceAll("<|>|:|\\.|\\/", "")+".owl");
-					//System.out.println("C:\\Users\\ï¿½lvaro\\Documents\\TFG\\alvaro\\intermedias\\STAR_"+ e.getKey().replaceAll("<|>|:|\\.|\\/", "")+".owl");
-					//File guardBOT = new File("C:\\Users\\ï¿½lvaro\\Documents\\TFG\\alvaro\\intermedias\\BOT_"+ e.getKey().replaceAll("<|>|:|\\.|\\/", "")+".owl");
-					File guardBOT = new File(this.rutaGuardado+"BOT_"+ e.getKey().replaceAll("<|>|:|\\.|\\/", "")+".owl");
-					//File guardTOP = new File("C:\\Users\\ï¿½lvaro\\Documents\\TFG\\alvaro\\intermedias\\TOP_"+ e.getKey().replaceAll("<|>|:|\\.|\\/", "")+".owl");
-					File guardTOP = new File(this.rutaGuardado+"TOP_"+ e.getKey().replaceAll("<|>|:|\\.|\\/", "")+".owl");
-					System.out.println("Leyendo: " + e.getKey());
-					this.log.println("Leyendo: " + e.getKey());
-					OWLOntology o = man.loadOntology(ontologia);
-					System.out.println("Leido " + e.getKey());
-					this.log.println("Leido " + e.getKey());
-					long startstar = System.currentTimeMillis();
-					
-					SyntacticLocalityModuleExtractor extractor = new SyntacticLocalityModuleExtractor(man, o,
-							ModuleType.STAR);
-					OWLOntology resultadotemp = extractor.extractAsOntology(e.getValue(), teemporal);
-					// result.add(resultadotemp);
-					
-					long endstar = System.currentTimeMillis();
-					
-					System.out.println("La estrategia star ha tardado en extraer los axiomas de " + e.getKey() + " " + ((endstar - startstar)/1000) + " segundos.");
-					this.log.println("La estrategia star ha tardado en extraer los axiomas de " + e.getKey() + " " + ((endstar - startstar)/1000) + " segundos.");
-					System.out.println("Se han extraido " + resultadotemp.getAxiomCount() + " axiomas y " + resultadotemp.getClassesInSignature().size() + " entidades"
-							+ " con star de " + e.getKey());
-					this.log.println("Se han extraido " + resultadotemp.getAxiomCount() + " axiomas y " + resultadotemp.getClassesInSignature().size() + " entidades"
-							+ " con star de " + e.getKey());
-					
-					this.tiempostar += (endstar - startstar);
-					
-					System.out.println("Procesado Star " + e.getKey());
-					this.log.println("Procesado Star " + e.getKey());
-					
-					this.log.flush();
-					
-					man.saveOntology(resultadotemp,new FunctionalSyntaxDocumentFormat(),new FileOutputStream(guardstar));
-					
-					long startbot = System.currentTimeMillis();
-					
-					SyntacticLocalityModuleExtractor extractorBot = new SyntacticLocalityModuleExtractor(man, o,
-							ModuleType.BOT);
-					OWLOntology resultadoBot = extractorBot.extractAsOntology(e.getValue(), bot);
-					
-					long endbot = System.currentTimeMillis();
-					
-					System.out.println("La estrategia BOT ha tardado en extraer los axiomas de " + e.getKey() + " " + ((endbot - startbot)/1000) + " segundos.");
-					this.log.println("La estrategia BOT ha tardado en extraer los axiomas de " + e.getKey() + " " + ((endbot - startbot)/1000) + " segundos.");
-					System.out.println("Se han extraido " + resultadoBot.getAxiomCount() + " axiomas y " + resultadoBot.getClassesInSignature().size() + " entidades"
-							+ " con BOT de " + e.getKey());
-					this.log.println("Se han extraido " + resultadoBot.getAxiomCount() + " axiomas y " + resultadoBot.getClassesInSignature().size() + " entidades"
-							+ " con BOT de " + e.getKey());
-					
-					this.tiempobot += (endbot - startbot);
-					
-					System.out.println("Procesado BOT " + e.getKey());
-					this.log.println("Procesado BOT " + e.getKey());
-					this.log.flush();
-					
-					man.saveOntology(resultadoBot,new FunctionalSyntaxDocumentFormat(),new FileOutputStream(guardBOT));
-					
-					long starttop = System.currentTimeMillis();
-					
-					SyntacticLocalityModuleExtractor extractorTop = new SyntacticLocalityModuleExtractor(man, o,
-							ModuleType.TOP);
-					OWLOntology resultadoTop = extractorTop.extractAsOntology(e.getValue(), top);
-					
-					long endtop = System.currentTimeMillis();
-					
-					System.out.println("La estrategia TOP ha tardado en extraer los axiomas de " + e.getKey() + " " + ((endtop - starttop)/1000) + " segundos.");
-					this.log.println("La estrategia TOP ha tardado en extraer los axiomas de " + e.getKey() + " " + ((endtop - starttop)/1000) + " segundos.");
-					System.out.println("Se han extraido " + resultadoTop.getAxiomCount() + " axiomas y " + resultadoTop.getClassesInSignature().size() + " entidades"
-							+ " con TOP de " + e.getKey());
-					this.log.println("Se han extraido " + resultadoTop.getAxiomCount() + " axiomas y " + resultadoTop.getClassesInSignature().size() + " entidades"
-							+ " con TOP de " + e.getKey());
-					
-					this.tiempotop += (endtop - starttop);
-					
-					man.saveOntology(resultadoTop,new FunctionalSyntaxDocumentFormat(),new FileOutputStream(guardTOP));
-
-					
-					System.out.println("Procesado " + e.getKey());
-					this.log.println("Procesado " + e.getKey());
-					//this.log.flush();
-					
-					this.resultadoCompleto.add(resultadotemp.getAxioms());		
-					
-					this.bot.add(resultadoBot.getAxioms());
-					
-					this.top.add(resultadoTop.getAxioms());
-					
-					this.introducidosStar.addAll(resultadotemp.getAxioms());
-					
-					this.introducidosTop.addAll(resultadoTop.getAxioms());
-					
-					this.introducidosBot.addAll(resultadoBot.getAxioms());
-					
-					int t =  resultadotemp.getAxiomCount();
-					
-					this.axiomas.replace(e.getKey(), t);
-					this.todos += t;
-					//resultsin.add(resultadotemp.getAxioms());
-										
-					
-					man.removeOntology(resultadotemp);
-					man.removeOntology(resultadoBot);
-					man.removeOntology(resultadoTop);
-					this.log.flush();
-	//catch (Throwable e1)
-				} catch (Throwable e1) {
-					// TODO Auto-generated catch block
-					//System.err.println("Error al leer la ontologï¿½a: " + e.getKey() + " " + e1.getCause() + " " + e1.getMessage() + " " +e1.getClass());
-					System.err.println("Error al leer la ontologï¿½a: " + e.getKey());
-					System.err.println(URIbien);
-					//this.log.println("Error al leer la ontologï¿½a: " + e.getKey() + " " + e1.getCause() + " " + e1.getMessage() + " " +e1.getClass());
-					this.log.println("Error al leer la ontologï¿½a: " + e.getKey());
-					this.log.println(URIbien);
-					//e1.printStackTrace();
-				}
-			}
-		}
-		
 	}
 	
 	public void GuardaOntologiaResultado (String metod) throws OWLOntologyStorageException, FileNotFoundException {
@@ -541,8 +431,8 @@ public class Principal {
 		
 		if (!metodo.equals("todas")) {
 			
-			System.out.println("Para completa la ontologï¿½a la estrategia " + metodo + " ha introducido " + this.introducidosStar.size() + " axiomas.");
-			this.log.println("Para completa la ontologï¿½a la estrategia " + metodo + " ha introducido " + this.introducidosStar.size() + " axiomas.");
+			System.out.println("Para completar la ontologia la estrategia " + metodo + " ha introducido " + this.introducidosStar.size() + " axiomas.");
+			this.log.println("Para completar la ontologia la estrategia " + metodo + " ha introducido " + this.introducidosStar.size() + " axiomas.");
 			System.out.println("La estrategia " + metodo + " ha tenido un tiempo acumulado de: " + this.tiempostar/1000 + " segundos.");
 			this.log.println("La estrategia " + metodo + " ha tenido un tiempo acumulado de: " + this.tiempostar/1000 + " segundos.");
 			this.log.flush();
@@ -562,18 +452,18 @@ public class Principal {
 			System.out.println("Entrados de BOT " + this.introducidosBot.size() + " y Entrados TOP " + this.introducidosTop.size());
 			this.log.println("Entrados de BOT " + this.introducidosBot.size() + " y Entrados TOP " + this.introducidosTop.size());
 			*/
-			System.out.println("Para completa la ontologï¿½a la estrategia star ha introducido " + this.introducidosStar.size() + " axiomas.");
-			this.log.println("Para completa la ontologï¿½a la estrategia star  ha introducido " + this.introducidosStar.size() + " axiomas.");
+			System.out.println("Para completa la ontologia la estrategia star ha introducido " + this.introducidosStar.size() + " axiomas.");
+			this.log.println("Para completa la ontologia la estrategia star  ha introducido " + this.introducidosStar.size() + " axiomas.");
 			System.out.println("La estrategia star ha tenido un tiempo acumulado de: " + this.tiempostar/1000 + " segundos.");
 			this.log.println("La estrategia star ha tenido un tiempo acumulado de: " + this.tiempostar/1000 + " segundos.");
 			
-			System.out.println("Para completa la ontologï¿½a la estrategia BOT ha introducido " + this.introducidosBot.size() + " axiomas.");
-			this.log.println("Para completa la ontologï¿½a la estrategia BOT ha introducido " + this.introducidosBot.size() + " axiomas.");
+			System.out.println("Para completa la ontologia la estrategia BOT ha introducido " + this.introducidosBot.size() + " axiomas.");
+			this.log.println("Para completa la ontologia la estrategia BOT ha introducido " + this.introducidosBot.size() + " axiomas.");
 			System.out.println("La estrategia bot ha tenido un tiempo acumulado de:" + this.tiempobot/1000 + " segundos.");
 			this.log.println("La estrategia bot ha tenido un tiempo acumulado de:" + this.tiempobot/1000 + " segundos.");
 			
-			System.out.println("Para completa la ontologï¿½a la estrategia TOP ha introducido " + this.introducidosTop.size() + " axiomas.");
-			this.log.println("Para completa la ontologï¿½a la estrategia TOP ha introducido " + this.introducidosTop.size() + " axiomas.");
+			System.out.println("Para completa la ontologia la estrategia TOP ha introducido " + this.introducidosTop.size() + " axiomas.");
+			this.log.println("Para completa la ontologia la estrategia TOP ha introducido " + this.introducidosTop.size() + " axiomas.");
 			System.out.println("La estrategia top ha tenido un tiempo acumulado de:" + this.tiempotop/1000 + " segundos.");
 			this.log.println("La estrategia top ha tenido un tiempo acumulado de:" + this.tiempotop/1000 + " segundos.");
 			
@@ -586,75 +476,264 @@ public class Principal {
 		if (!metodo.equals("todas")) {
 			System.out.println("Generando Razonador " + metodo);
 			this.log.println("Generando Razonador " + metodo);
-		
+			
+			File guard =  new File(this.rutaGuardado+"OntologiaResultado"+".owl");
+			
+			OWLOntologyManager razonar = OWLManager.createOWLOntologyManager();
+			OWLOntology o = null;
+			
+			try {
+				o = razonar.loadOntologyFromOntologyDocument(guard);
+			} catch (OWLOntologyCreationException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
 			Configuration conf = new Configuration();
-			Reasoner razonador = new Reasoner(conf, this.resultadoCompleto);
+			//Reasoner razonador = new Reasoner(conf, this.resultadoCompleto);
+			Reasoner razonador = new Reasoner(conf, o);
 		
 			System.out.println("Cargando razonador");
 			this.log.println("Cargando razonador");
 			razonador.precomputeInferences();
 			if (razonador.isConsistent()) {
-				System.out.println("La ontologï¿½a generada con "+metodo+" no tiene ninguna inconguencia y por tanto se ha completado correctamente");
-				this.log.println("La ontologï¿½a generada con "+metodo+" no tiene ninguna inconguencia y por tanto se ha completado correctamente");
+				System.out.println("La ontología generada con "+metodo+" no tiene ninguna inconguencia y por tanto se ha completado correctamente");
+				this.log.println("La ontología generada con "+metodo+" no tiene ninguna inconguencia y por tanto se ha completado correctamente");
 			} else {
-				System.out.println("La ontologï¿½a generada con "+metodo+" tiene incongruencias y por tanto no se ha completado correctamente");
-				this.log.println("La ontologï¿½a generada con "+metodo+" tiene incongruencias y por tanto no se ha completado correctamente");
+				System.out.println("La ontología generada con "+metodo+" tiene incongruencias y por tanto no se ha completado correctamente");
+				this.log.println("La ontología generada con "+metodo+" tiene incongruencias y por tanto no se ha completado correctamente");
 			}
 		} else {
+			
+			File guardstar = new File(this.rutaGuardado+"ResultadoStar"+".owl");
+
+			File guardBOT = new File(this.rutaGuardado+"ResultadoBot"+".owl");
+			
+			File guardTOP = new File(this.rutaGuardado+"ResultadoTop"+".owl");
 			
 			System.out.println("Generando Razonador Star");
 			this.log.println("Generando Razonador Star");
 			
+			OWLOntologyManager razonarstar = OWLManager.createOWLOntologyManager();
+			OWLOntology ostar = null;
+			
+			try {
+				ostar = razonarstar.loadOntologyFromOntologyDocument(guardstar);
+			} catch (OWLOntologyCreationException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
 			Configuration confstar = new Configuration();
-			Reasoner razonadorstar = new Reasoner(confstar, this.resultadoCompleto);
+			Reasoner razonadorstar = new Reasoner(confstar, ostar);
 			
 			System.out.println("Cargando razonador Star");
 			this.log.println("Cargando razonador Star");
 			razonadorstar.precomputeInferences();
 			if (razonadorstar.isConsistent()) {
-				System.out.println("La ontologï¿½a generada con star no tiene ninguna inconguencia y por tanto se ha completado correctamente");
-				this.log.println("La ontologï¿½a generada con star no tiene ninguna inconguencia y por tanto se ha completado correctamente");
+				System.out.println("La ontología generada con star no tiene ninguna inconguencia y por tanto se ha completado correctamente");
+				this.log.println("La ontología generada con star no tiene ninguna inconguencia y por tanto se ha completado correctamente");
 			} else {
-				System.out.println("La ontologï¿½a generada con star tiene incongruencias y por tanto no se ha completado correctamente");
-				this.log.println("La ontologï¿½a generada con star tiene incongruencias y por tanto no se ha completado correctamente");
+				System.out.println("La ontología generada con star tiene incongruencias y por tanto no se ha completado correctamente");
+				this.log.println("La ontología generada con star tiene incongruencias y por tanto no se ha completado correctamente");
 			}
 			
 			System.out.println("Generando Razonador Bot");
 			this.log.println("Generando Razonador Bot");
 			
+			OWLOntologyManager razonarbot = OWLManager.createOWLOntologyManager();
+			OWLOntology obot = null;
+			
+			try {
+				obot = razonarbot.loadOntologyFromOntologyDocument(guardBOT);
+			} catch (OWLOntologyCreationException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
 			Configuration confbot = new Configuration();
-			Reasoner razonadorbot = new Reasoner(confbot, this.bot);
+			Reasoner razonadorbot = new Reasoner(confbot, obot);
 			
 			System.out.println("Cargando razonador Bot");
 			this.log.println("Cargando razonador Bot");
 			razonadorbot.precomputeInferences();
 			
 			if (razonadorbot.isConsistent()) {
-				System.out.println("La ontologï¿½a generada con bot no tiene ninguna inconguencia y por tanto se ha completado correctamente");
-				this.log.println("La ontologï¿½a generada con bot no tiene ninguna inconguencia y por tanto se ha completado correctamente");
+				System.out.println("La ontología generada con bot no tiene ninguna inconguencia y por tanto se ha completado correctamente");
+				this.log.println("La ontología generada con bot no tiene ninguna inconguencia y por tanto se ha completado correctamente");
 			} else {
-				System.out.println("La ontologï¿½a generada con bot tiene incongruencias y por tanto no se ha completado correctamente");
-				this.log.println("La ontologï¿½a generada con bot tiene incongruencias y por tanto no se ha completado correctamente");
+				System.out.println("La ontología generada con bot tiene incongruencias y por tanto no se ha completado correctamente");
+				this.log.println("La ontología generada con bot tiene incongruencias y por tanto no se ha completado correctamente");
 			}
 			
 			System.out.println("Generando Razonador Top");
 			this.log.println("Generando Razonador Top");
 			
+			OWLOntologyManager razonartop = OWLManager.createOWLOntologyManager();
+			OWLOntology otop = null;
+			
+			try {
+				otop = razonartop.loadOntologyFromOntologyDocument(guardTOP);
+			} catch (OWLOntologyCreationException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
 			Configuration conftop = new Configuration();
-			Reasoner razonadortop = new Reasoner(conftop, this.top);
+			Reasoner razonadortop = new Reasoner(conftop, otop);
 			
 			System.out.println("Cargando razonador Top");
 			this.log.println("Cargando razonador Top");
 			razonadortop.precomputeInferences();
 			
 			if (razonadortop.isConsistent()) {
-				System.out.println("La ontologï¿½a generada con Top no tiene ninguna inconguencia y por tanto se ha completado correctamente");
-				this.log.println("La ontologï¿½a generada con Top no tiene ninguna inconguencia y por tanto se ha completado correctamente");
+				System.out.println("La ontología generada con Top no tiene ninguna inconguencia y por tanto se ha completado correctamente");
+				this.log.println("La ontología generada con Top no tiene ninguna inconguencia y por tanto se ha completado correctamente");
 			} else {
-				System.out.println("La ontologï¿½a generada con Top tiene incongruencias y por tanto no se ha completado correctamente");
-				this.log.println("La ontologï¿½a generada con Top tiene incongruencias y por tanto no se ha completado correctamente");
+				System.out.println("La ontología generada con Top tiene incongruencias y por tanto no se ha completado correctamente");
+				this.log.println("La ontología generada con Top tiene incongruencias y por tanto no se ha completado correctamente");
 			}
 			
 		}
 	}
 }
+
+
+/*
+public void completaOntologia () {
+
+for (Entry<String, HashSet<OWLEntity>> e : this.mapeo.entrySet()) {
+	if (!this.Original.getOntologyID().toString().contains(e.getKey().toLowerCase()) && e.getKey() != null && !e.getKey().equals("")) {
+		//pruebasmap.println(e.getKey());
+		String URIReserva = e.getKey() + ".owl";
+		String URIbien = URIReserva.toLowerCase();
+		IRI ontologia = IRI.create(URIbien);
+		IRI teemporal = IRI.create("PRUEBA");
+		IRI top = IRI.create("TOP");
+		IRI bot = IRI.create("BOT");
+		
+
+		
+		try {
+			//File guardstar = new File("C:\\Users\\ï¿½lvaro\\Documents\\TFG\\alvaro\\intermedias\\STAR_"+ e.getKey().replaceAll("<|>|:|\\.|\\/", "")+".owl");
+			File guardstar = new File(this.rutaGuardado+"STAR_"+ e.getKey().replaceAll("<|>|:|\\.|\\/", "")+".owl");
+			//System.out.println("C:\\Users\\ï¿½lvaro\\Documents\\TFG\\alvaro\\intermedias\\STAR_"+ e.getKey().replaceAll("<|>|:|\\.|\\/", "")+".owl");
+			//File guardBOT = new File("C:\\Users\\ï¿½lvaro\\Documents\\TFG\\alvaro\\intermedias\\BOT_"+ e.getKey().replaceAll("<|>|:|\\.|\\/", "")+".owl");
+			File guardBOT = new File(this.rutaGuardado+"BOT_"+ e.getKey().replaceAll("<|>|:|\\.|\\/", "")+".owl");
+			//File guardTOP = new File("C:\\Users\\ï¿½lvaro\\Documents\\TFG\\alvaro\\intermedias\\TOP_"+ e.getKey().replaceAll("<|>|:|\\.|\\/", "")+".owl");
+			File guardTOP = new File(this.rutaGuardado+"TOP_"+ e.getKey().replaceAll("<|>|:|\\.|\\/", "")+".owl");
+			System.out.println("Leyendo: " + e.getKey());
+			this.log.println("Leyendo: " + e.getKey());
+			OWLOntology o = man.loadOntology(ontologia);
+			System.out.println("Leido " + e.getKey());
+			this.log.println("Leido " + e.getKey());
+			long startstar = System.currentTimeMillis();
+			
+			SyntacticLocalityModuleExtractor extractor = new SyntacticLocalityModuleExtractor(man, o,
+					ModuleType.STAR);
+			OWLOntology resultadotemp = extractor.extractAsOntology(e.getValue(), teemporal);
+			// result.add(resultadotemp);
+			
+			long endstar = System.currentTimeMillis();
+			
+			System.out.println("La estrategia star ha tardado en extraer los axiomas de " + e.getKey() + " " + ((endstar - startstar)/1000) + " segundos.");
+			this.log.println("La estrategia star ha tardado en extraer los axiomas de " + e.getKey() + " " + ((endstar - startstar)/1000) + " segundos.");
+			System.out.println("Se han extraido " + resultadotemp.getAxiomCount() + " axiomas y " + resultadotemp.getClassesInSignature().size() + " entidades"
+					+ " con star de " + e.getKey());
+			this.log.println("Se han extraido " + resultadotemp.getAxiomCount() + " axiomas y " + resultadotemp.getClassesInSignature().size() + " entidades"
+					+ " con star de " + e.getKey());
+			
+			this.tiempostar += (endstar - startstar);
+			
+			System.out.println("Procesado Star " + e.getKey());
+			this.log.println("Procesado Star " + e.getKey());
+			
+			this.log.flush();
+			
+			man.saveOntology(resultadotemp,new FunctionalSyntaxDocumentFormat(),new FileOutputStream(guardstar));
+			
+			long startbot = System.currentTimeMillis();
+			
+			SyntacticLocalityModuleExtractor extractorBot = new SyntacticLocalityModuleExtractor(man, o,
+					ModuleType.BOT);
+			OWLOntology resultadoBot = extractorBot.extractAsOntology(e.getValue(), bot);
+			
+			long endbot = System.currentTimeMillis();
+			
+			System.out.println("La estrategia BOT ha tardado en extraer los axiomas de " + e.getKey() + " " + ((endbot - startbot)/1000) + " segundos.");
+			this.log.println("La estrategia BOT ha tardado en extraer los axiomas de " + e.getKey() + " " + ((endbot - startbot)/1000) + " segundos.");
+			System.out.println("Se han extraido " + resultadoBot.getAxiomCount() + " axiomas y " + resultadoBot.getClassesInSignature().size() + " entidades"
+					+ " con BOT de " + e.getKey());
+			this.log.println("Se han extraido " + resultadoBot.getAxiomCount() + " axiomas y " + resultadoBot.getClassesInSignature().size() + " entidades"
+					+ " con BOT de " + e.getKey());
+			
+			this.tiempobot += (endbot - startbot);
+			
+			System.out.println("Procesado BOT " + e.getKey());
+			this.log.println("Procesado BOT " + e.getKey());
+			this.log.flush();
+			
+			man.saveOntology(resultadoBot,new FunctionalSyntaxDocumentFormat(),new FileOutputStream(guardBOT));
+			
+			long starttop = System.currentTimeMillis();
+			
+			SyntacticLocalityModuleExtractor extractorTop = new SyntacticLocalityModuleExtractor(man, o,
+					ModuleType.TOP);
+			OWLOntology resultadoTop = extractorTop.extractAsOntology(e.getValue(), top);
+			
+			long endtop = System.currentTimeMillis();
+			
+			System.out.println("La estrategia TOP ha tardado en extraer los axiomas de " + e.getKey() + " " + ((endtop - starttop)/1000) + " segundos.");
+			this.log.println("La estrategia TOP ha tardado en extraer los axiomas de " + e.getKey() + " " + ((endtop - starttop)/1000) + " segundos.");
+			System.out.println("Se han extraido " + resultadoTop.getAxiomCount() + " axiomas y " + resultadoTop.getClassesInSignature().size() + " entidades"
+					+ " con TOP de " + e.getKey());
+			this.log.println("Se han extraido " + resultadoTop.getAxiomCount() + " axiomas y " + resultadoTop.getClassesInSignature().size() + " entidades"
+					+ " con TOP de " + e.getKey());
+			
+			this.tiempotop += (endtop - starttop);
+			
+			man.saveOntology(resultadoTop,new FunctionalSyntaxDocumentFormat(),new FileOutputStream(guardTOP));
+
+			
+			System.out.println("Procesado " + e.getKey());
+			this.log.println("Procesado " + e.getKey());
+			//this.log.flush();
+			
+			this.resultadoCompleto.add(resultadotemp.getAxioms());		
+			
+			this.bot.add(resultadoBot.getAxioms());
+			
+			this.top.add(resultadoTop.getAxioms());
+			
+			this.introducidosStar.addAll(resultadotemp.getAxioms());
+			
+			this.introducidosTop.addAll(resultadoTop.getAxioms());
+			
+			this.introducidosBot.addAll(resultadoBot.getAxioms());
+			
+			int t =  resultadotemp.getAxiomCount();
+			
+			this.axiomas.replace(e.getKey(), t);
+			this.todos += t;
+			//resultsin.add(resultadotemp.getAxioms());
+								
+			
+			man.removeOntology(resultadotemp);
+			man.removeOntology(resultadoBot);
+			man.removeOntology(resultadoTop);
+			this.log.flush();
+//catch (Throwable e1)
+		} catch (Throwable e1) {
+			// TODO Auto-generated catch block
+			//System.err.println("Error al leer la ontologï¿½a: " + e.getKey() + " " + e1.getCause() + " " + e1.getMessage() + " " +e1.getClass());
+			System.err.println("Error al leer la ontologï¿½a: " + e.getKey());
+			System.err.println(URIbien);
+			//this.log.println("Error al leer la ontologï¿½a: " + e.getKey() + " " + e1.getCause() + " " + e1.getMessage() + " " +e1.getClass());
+			this.log.println("Error al leer la ontologï¿½a: " + e.getKey());
+			this.log.println(URIbien);
+			//e1.printStackTrace();
+		}
+	}
+}
+
+}*/

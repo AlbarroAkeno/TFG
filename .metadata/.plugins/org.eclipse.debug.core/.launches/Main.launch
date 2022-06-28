@@ -9,7 +9,7 @@
 <booleanAttribute key="org.eclipse.jdt.launching.ATTR_EXCLUDE_TEST_CODE" value="true"/>
 <stringAttribute key="org.eclipse.jdt.launching.CLASSPATH_PROVIDER" value="org.eclipse.m2e.launchconfig.classpathProvider"/>
 <stringAttribute key="org.eclipse.jdt.launching.MAIN_TYPE" value="msc.Main"/>
-<stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="-f C:\\Users\\Álvaro\\Documents\\TFG\\alvaro\\obi.owl C:\\Users\\Álvaro\\Documents\\TFG\\alvaro\\validacioneseclipse\\ Bot"/>
+<stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="-f C:\\Users\\Álvaro\\Documents\\TFG\\alvaro\\doidn.owl C:\\Users\\Álvaro\\Documents\\TFG\\alvaro\\validacioneseclipse\\tiempo1\\ Bot"/>
 <stringAttribute key="org.eclipse.jdt.launching.PROJECT_ATTR" value="msc"/>
 <stringAttribute key="org.eclipse.jdt.launching.SOURCE_PATH_PROVIDER" value="org.eclipse.m2e.launchconfig.sourcepathProvider"/>
 <stringAttribute key="org.eclipse.jdt.launching.VM_ARGUMENTS" value="-Xmx15g"/>

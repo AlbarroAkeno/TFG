@@ -1,0 +1,44 @@
+package msc;
+
+
+import picocli.CommandLine;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
+import picocli.CommandLine.Parameters;
+
+import org.semanticweb.owlapi.apibinding.OWLManager;
+import org.semanticweb.owlapi.model.OWLOntology;
+import org.semanticweb.owlapi.model.OWLOntologyCreationException;
+import org.semanticweb.owlapi.model.OWLOntologyManager;
+
+@Command(
+	name = "main",
+	description = "Es el main"		
+)
+
+public class PruebaArgs {
+
+	//private boolean fichero = false;
+	
+	@Parameters(index = "0", description = "Esto es la URI de la ontología a completar. Si deseas que sea una ruta utiliza -f o --file")
+	private String entrada;
+	
+	@Parameters(index = "1", description = "Esto es la ruta del directorio donde guardar los resultados")
+	private String guardado;
+	
+	@Option(names = {"-f", "-F", "--file", "--File"}, description = "Introduce esta opción si vas a introducir la ontología con la ruta de un fichero")
+	private boolean fichero = true;
+	
+	//@Option(names = {"-u", "-U", "--uri", "--URI"}, description = "Introduce esta opción si vas a introducir la ontología con la URI")
+	//fichero = false;
+	
+	
+	public static void main(String[] args) {
+		// TODO Auto-generated method stub
+
+		new CommandLine(new PruebaArgs()).execute(args);
+		
+		
+	}
+
+}

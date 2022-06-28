@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<qualifiedTypeNameHistroy>
+<fullyQualifiedTypeName name="java.io.File"/>
+<fullyQualifiedTypeName name="java.io.PrintWriter"/>
+<fullyQualifiedTypeName name="org.semanticweb.owlapi.model.parameters.OntologyCopy"/>
+<fullyQualifiedTypeName name="msc.Principal"/>
+<fullyQualifiedTypeName name="org.semanticweb.owlapi.model.OWLAxiom"/>
+<fullyQualifiedTypeName name="picocli.CommandLine.Command"/>
+<fullyQualifiedTypeName name="sun.tools.jar.CommandLine"/>
+<fullyQualifiedTypeName name="msc.PruebaArgs"/>
+<fullyQualifiedTypeName name="picocli.CommandLine.Parameters"/>
+</qualifiedTypeNameHistroy>

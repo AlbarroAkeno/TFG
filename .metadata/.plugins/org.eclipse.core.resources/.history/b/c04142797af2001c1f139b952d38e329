@@ -1,0 +1,73 @@
+package msc;
+
+import picocli.CommandLine;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
+import picocli.CommandLine.Parameters;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
+
+import org.semanticweb.owlapi.model.OWLOntologyCreationException;
+import org.semanticweb.owlapi.model.OWLOntologyStorageException;
+
+
+@Command(
+		name = "main",
+		description = "Es el main"		
+	)
+
+public class Main {
+
+	public static void main(String[] args) {
+		// TODO Auto-generated method stub
+		Principal prin = null;
+
+		File ontologia = new File("C:\\Users\\Álvaro\\Documents\\TFG\\alvaro\\doidn.owl");
+		//File ontologia = new File("C:\\Users\\Álvaro\\Documents\\TFG\\alvaro\\OMIM.ttl");
+		
+		try {
+			prin = new Principal(ontologia);
+		} catch (OWLOntologyCreationException e) {
+			// TODO Auto-generated catch block
+			System.err.println("Error al leer la ontología pasada como parámetro, por favor, revise el fichero o la URI utilizada");
+			return;
+		}
+		
+		prin.generaMapeo();
+		
+		PrintWriter esc = null;
+		
+		try {
+			esc = new PrintWriter("C:\\Users\\Álvaro\\Documents\\TFG\\alvaro\\MapeoMain.txt", "UTF-8");
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			System.err.println("Error al generar el fichero de texto para mostrar el mapping");
+		} catch (UnsupportedEncodingException e) {
+			// TODO Auto-generated catch block
+			System.err.println("Error al generar el fichero de texto para mostrar el mapping");
+		}
+		
+		
+		if (esc != null) prin.imprimeMapeo(esc);
+		
+		prin.completaOntologia();
+		
+		File guardado = new File("C:\\Users\\Álvaro\\Documents\\TFG\\alvaro\\MainGuardado.owl");
+		
+		try {
+			prin.GuardaOntologiaResultado(guardado);
+		} catch (OWLOntologyStorageException e) {
+			// TODO Auto-generated catch block
+			System.err.println("Error al guardar la ontología");
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			System.err.println("Error generando el fichero de guardado");
+		}
+		
+		prin.generarEstadísticas();
+	}
+
+}

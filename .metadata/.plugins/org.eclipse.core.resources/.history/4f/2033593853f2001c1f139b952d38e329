@@ -1,0 +1,31 @@
+package msc;
+
+
+import picocli.CommandLine;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
+import picocli.CommandLine.Parameters;
+
+import org.semanticweb.owlapi.apibinding.OWLManager;
+import org.semanticweb.owlapi.model.OWLOntology;
+import org.semanticweb.owlapi.model.OWLOntologyCreationException;
+import org.semanticweb.owlapi.model.OWLOntologyManager;
+
+public class PruebaArgs {
+
+	@Option(names = {"-f", "-F", "--file", "--File"}, description = "Introduce esta opción si vas a introducir la ontología con la ruta de un fichero")
+	private boolean fichero = true;
+	
+	@Option(names = {"-u", "-U", "--uri", "--URI"}, description = "Introduce esta opción si vas a introducir la ontología con la URI")
+	private boolean fichero = false;
+	
+	
+	public static void main(String[] args) {
+		// TODO Auto-generated method stub
+
+		
+		
+		
+	}
+
+}

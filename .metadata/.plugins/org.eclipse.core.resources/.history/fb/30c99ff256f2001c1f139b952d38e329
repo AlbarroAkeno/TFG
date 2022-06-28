@@ -1,0 +1,266 @@
+package msc;
+
+
+import picocli.CommandLine;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.IDefaultValueProvider;
+import picocli.CommandLine.IModelTransformer;
+import picocli.CommandLine.IParameterPreprocessor;
+import picocli.CommandLine.IVersionProvider;
+import picocli.CommandLine.Option;
+import picocli.CommandLine.Parameters;
+import picocli.CommandLine.ScopeType;
+
+import java.lang.annotation.Annotation;
+
+import org.semanticweb.owlapi.apibinding.OWLManager;
+import org.semanticweb.owlapi.model.OWLOntology;
+import org.semanticweb.owlapi.model.OWLOntologyCreationException;
+import org.semanticweb.owlapi.model.OWLOntologyManager;
+
+@Command(
+	name = "main",
+	description = "Es el main"		
+)
+
+public class PruebaArgs {
+
+	//private boolean fichero = false;
+	
+	@Option(names = {"-f", "-F", "--file", "--File"}, description = "Introduce esta opción si vas a introducir la ontología con la ruta de un fichero")
+	private boolean fichero = true;
+	
+	//@Option(names = {"-u", "-U", "--uri", "--URI"}, description = "Introduce esta opción si vas a introducir la ontología con la URI")
+	//fichero = false;
+	
+	
+	public static void main(String[] args) {
+		// TODO Auto-generated method stub
+
+		new Command() {
+			
+			public Class<? extends Annotation> annotationType() {
+				// TODO Auto-generated method stub
+				return null;
+			}
+			
+			public Class<? extends IVersionProvider> versionProvider() {
+				// TODO Auto-generated method stub
+				return null;
+			}
+			
+			public String[] version() {
+				// TODO Auto-generated method stub
+				return null;
+			}
+			
+			public int usageHelpWidth() {
+				// TODO Auto-generated method stub
+				return 0;
+			}
+			
+			public boolean usageHelpAutoWidth() {
+				// TODO Auto-generated method stub
+				return false;
+			}
+			
+			public String synopsisSubcommandLabel() {
+				// TODO Auto-generated method stub
+				return null;
+			}
+			
+			public String synopsisHeading() {
+				// TODO Auto-generated method stub
+				return null;
+			}
+			
+			public boolean subcommandsRepeatable() {
+				// TODO Auto-generated method stub
+				return false;
+			}
+			
+			public Class<?>[] subcommands() {
+				// TODO Auto-generated method stub
+				return null;
+			}
+			
+			public boolean sortOptions() {
+				// TODO Auto-generated method stub
+				return false;
+			}
+			
+			public boolean showEndOfOptionsDelimiterInUsageHelp() {
+				// TODO Auto-generated method stub
+				return false;
+			}
+			
+			public boolean showDefaultValues() {
+				// TODO Auto-generated method stub
+				return false;
+			}
+			
+			public boolean showAtFileInUsageHelp() {
+				// TODO Auto-generated method stub
+				return false;
+			}
+			
+			public String separator() {
+				// TODO Auto-generated method stub
+				return null;
+			}
+			
+			public ScopeType scope() {
+				// TODO Auto-generated method stub
+				return null;
+			}
+			
+			public String resourceBundle() {
+				// TODO Auto-generated method stub
+				return null;
+			}
+			
+			public char requiredOptionMarker() {
+				// TODO Auto-generated method stub
+				return 0;
+			}
+			
+			public Class<? extends IParameterPreprocessor> preprocessor() {
+				// TODO Auto-generated method stub
+				return null;
+			}
+			
+			public String parameterListHeading() {
+				// TODO Auto-generated method stub
+				return null;
+			}
+			
+			public String optionListHeading() {
+				// TODO Auto-generated method stub
+				return null;
+			}
+			
+			public String name() {
+				// TODO Auto-generated method stub
+				return null;
+			}
+			
+			public Class<? extends IModelTransformer> modelTransformer() {
+				// TODO Auto-generated method stub
+				return null;
+			}
+			
+			public boolean mixinStandardHelpOptions() {
+				// TODO Auto-generated method stub
+				return false;
+			}
+			
+			public boolean hidden() {
+				// TODO Auto-generated method stub
+				return false;
+			}
+			
+			public boolean helpCommand() {
+				// TODO Auto-generated method stub
+				return false;
+			}
+			
+			public String headerHeading() {
+				// TODO Auto-generated method stub
+				return null;
+			}
+			
+			public String[] header() {
+				// TODO Auto-generated method stub
+				return null;
+			}
+			
+			public String footerHeading() {
+				// TODO Auto-generated method stub
+				return null;
+			}
+			
+			public String[] footer() {
+				// TODO Auto-generated method stub
+				return null;
+			}
+			
+			public int exitCodeOnVersionHelp() {
+				// TODO Auto-generated method stub
+				return 0;
+			}
+			
+			public int exitCodeOnUsageHelp() {
+				// TODO Auto-generated method stub
+				return 0;
+			}
+			
+			public int exitCodeOnSuccess() {
+				// TODO Auto-generated method stub
+				return 0;
+			}
+			
+			public int exitCodeOnInvalidInput() {
+				// TODO Auto-generated method stub
+				return 0;
+			}
+			
+			public int exitCodeOnExecutionException() {
+				// TODO Auto-generated method stub
+				return 0;
+			}
+			
+			public String exitCodeListHeading() {
+				// TODO Auto-generated method stub
+				return null;
+			}
+			
+			public String[] exitCodeList() {
+				// TODO Auto-generated method stub
+				return null;
+			}
+			
+			public String descriptionHeading() {
+				// TODO Auto-generated method stub
+				return null;
+			}
+			
+			public String[] description() {
+				// TODO Auto-generated method stub
+				return null;
+			}
+			
+			public Class<? extends IDefaultValueProvider> defaultValueProvider() {
+				// TODO Auto-generated method stub
+				return null;
+			}
+			
+			public String[] customSynopsis() {
+				// TODO Auto-generated method stub
+				return null;
+			}
+			
+			public String commandListHeading() {
+				// TODO Auto-generated method stub
+				return null;
+			}
+			
+			public String[] aliases() {
+				// TODO Auto-generated method stub
+				return null;
+			}
+			
+			public boolean addMethodSubcommands() {
+				// TODO Auto-generated method stub
+				return false;
+			}
+			
+			public boolean abbreviateSynopsis() {
+				// TODO Auto-generated method stub
+				return false;
+			}
+		};
+		
+		
+	}
+
+}

@@ -4,33 +4,33 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.PrintWriter;
-import org.semanticweb.owlapi.model.IRI;
-import org.semanticweb.owlapi.model.OWLAxiom;
-
-import java.io.UnsupportedEncodingException;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.Map.Entry;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import org.semanticweb.HermiT.Configuration;
 import org.semanticweb.HermiT.Reasoner;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.formats.FunctionalSyntaxDocumentFormat;
 import org.semanticweb.owlapi.model.IRI;
+import org.semanticweb.owlapi.model.OWLAxiom;
 import org.semanticweb.owlapi.model.OWLEntity;
 import org.semanticweb.owlapi.model.OWLOntology;
 import org.semanticweb.owlapi.model.OWLOntologyCreationException;
 import org.semanticweb.owlapi.model.OWLOntologyManager;
 import org.semanticweb.owlapi.model.OWLOntologyStorageException;
 import org.semanticweb.owlapi.model.parameters.OntologyCopy;
-import org.semanticweb.owlapi.reasoner.OWLReasonerFactory;
 
 import uk.ac.manchester.cs.owlapi.modularity.ModuleType;
 import uk.ac.manchester.cs.owlapi.modularity.SyntacticLocalityModuleExtractor;
-
-import java.time.Duration;
-import java.time.Instant;
 
 
 
@@ -50,12 +50,12 @@ public class Principal {
 	private Set<OWLAxiom> introducidosTop;
 	//private Set<OWLEntity> conjuntoOriginal;
 	
-	//File doid = new File("C:\\Users\\Álvaro\\Documents\\TFG\\alvaro\\doid.owl");
+	//File doid = new File("C:\\Users\\ï¿½lvaro\\Documents\\TFG\\alvaro\\doid.owl");
 	//PrintWriter pruebasignature = null;
 	//PrintWriter pruebasmap = null;
-	//File resultado = new File("C:\\Users\\Álvaro\\Documents\\TFG\\alvaro\\completo.owl");
+	//File resultado = new File("C:\\Users\\ï¿½lvaro\\Documents\\TFG\\alvaro\\completo.owl");
 	//OWLOntology result = null;
-	//File resultadosin = new File("C:\\Users\\Álvaro\\Documents\\TFG\\alvaro\\sindoid.owl");
+	//File resultadosin = new File("C:\\Users\\ï¿½lvaro\\Documents\\TFG\\alvaro\\sindoid.owl");
 	//OWLOntology resultsin = null;
 	private TreeMap<String, HashSet<OWLEntity>> mapeo;
 	private TreeMap<String, Integer> axiomas;
@@ -129,7 +129,7 @@ public class Principal {
 		
 		/*
 		try {
-			this.log = new PrintWriter("C:\\Users\\Álvaro\\Documents\\TFG\\alvaro\\LogTotal.txt", "UTF-8");
+			this.log = new PrintWriter("C:\\Users\\ï¿½lvaro\\Documents\\TFG\\alvaro\\LogTotal.txt", "UTF-8");
 		} catch (FileNotFoundException e2) {
 			// TODO Auto-generated catch block
 			e2.printStackTrace();
@@ -231,15 +231,78 @@ public class Principal {
 		}
 	}
 	
-	public int completaOntologíaMetodo(String metodo) {
+	public int completaOntologiaMetodo(String metodo) {
 		ModuleType m = null;
 		//this.metod = metodo;
 		if (metodo.equals("star")) m = ModuleType.STAR;
 		else if (metodo.equals("bot")) m = ModuleType.BOT;
 		else if (metodo.equals("top")) m = ModuleType.TOP;
 		else {
-			System.err.println("Método introducido no valido. Por favor introduzca Star, Bot, Top o Todas");
-			log.println("Método introducido no valido: " + metodo);
+			System.err.println("Metodo introducido no valido. Por favor introduzca Star, Bot, Top");
+			log.println("Metodo introducido no valido: " + metodo);
+			return 1;
+		}
+		
+		ExecutorService executor = Executors.newFixedThreadPool(1);
+		Map<IRI, Set<OWLAxiom>> axiomasPorOntologia;
+		Map<IRI, Future<Set<OWLAxiom>>> futureAxiomasPorOntologia = new HashMap<>();
+		for (Entry<String, HashSet<OWLEntity>> e : this.mapeo.entrySet()) {
+			if (!this.Original.getOntologyID().toString().contains(e.getKey().toLowerCase()) && e.getKey() != null && !e.getKey().equals("")) {
+				String URIReserva = e.getKey() + ".owl";
+				String URIbien = URIReserva.toLowerCase();
+				IRI ontologia = IRI.create(URIbien);
+				TareaObtenModulo tarea = new TareaObtenModulo(m, ontologia, e.getValue());
+				Future<Set<OWLAxiom>> result = executor.submit(new JobExecutor(tarea));
+				futureAxiomasPorOntologia.put(ontologia, result);
+			}
+		}
+		
+		try {
+			executor.shutdown();
+			executor.awaitTermination(24, TimeUnit.HOURS);
+		} catch (InterruptedException e1) {
+			e1.printStackTrace();
+			return 1;
+		}
+		
+		axiomasPorOntologia = this.getAxiomasPorOntologia(futureAxiomasPorOntologia);
+		for (IRI ontologiaUsada : axiomasPorOntologia.keySet()) {
+			Set<OWLAxiom> axiomasModulo = axiomasPorOntologia.get(ontologiaUsada);
+			if (axiomasModulo != null) {
+				this.resultadoCompleto.add(axiomasModulo);
+			} else {
+				System.out.println("No modulo para " + ontologiaUsada.toQuotedString());
+			}
+		}
+		
+		
+		return 0;
+	}
+	private Map<IRI, Set<OWLAxiom>> getAxiomasPorOntologia (Map<IRI, Future<Set<OWLAxiom>>> futureAxiomasPorOntologia) {
+		Map<IRI, Set<OWLAxiom>> axiomasPorOntologia = new HashMap<>();
+		if (futureAxiomasPorOntologia != null) {
+			for (IRI ont : futureAxiomasPorOntologia.keySet()) {
+				try {
+					axiomasPorOntologia.put(ont, futureAxiomasPorOntologia.get(ont).get());
+				} catch (Exception e) {
+					e.printStackTrace();
+					axiomasPorOntologia.put(ont, null);
+				}
+			}
+			
+		}
+		return axiomasPorOntologia;
+		
+	}
+	public int completaOntologiaMetodoBak(String metodo) {
+		ModuleType m = null;
+		//this.metod = metodo;
+		if (metodo.equals("star")) m = ModuleType.STAR;
+		else if (metodo.equals("bot")) m = ModuleType.BOT;
+		else if (metodo.equals("top")) m = ModuleType.TOP;
+		else {
+			System.err.println("Mï¿½todo introducido no valido. Por favor introduzca Star, Bot, Top o Todas");
+			log.println("Mï¿½todo introducido no valido: " + metodo);
 			return 1;
 		}
 		
@@ -286,7 +349,7 @@ public class Principal {
 
 					//this.log.flush();
 					
-					this.resultadoCompleto.add(resultadotemp.getAxioms());		//Pregunta si deberías utilizar el getClassesInSignature();
+					this.resultadoCompleto.add(resultadotemp.getAxioms());		//Pregunta si deberï¿½as utilizar el getClassesInSignature();
 					
 					this.introducidosStar.addAll(resultadotemp.getAxioms());
 
@@ -301,11 +364,11 @@ public class Principal {
 	//catch (Throwable e1)
 				} catch (Throwable e1) {
 					// TODO Auto-generated catch block
-					//System.err.println("Error al leer la ontología: " + e.getKey() + " " + e1.getCause() + " " + e1.getMessage() + " " +e1.getClass());
-					System.err.println("Error al leer la ontología: " + e.getKey());
+					//System.err.println("Error al leer la ontologï¿½a: " + e.getKey() + " " + e1.getCause() + " " + e1.getMessage() + " " +e1.getClass());
+					System.err.println("Error al leer la ontologï¿½a: " + e.getKey());
 					System.err.println(URIbien);
-					//this.log.println("Error al leer la ontología: " + e.getKey() + " " + e1.getCause() + " " + e1.getMessage() + " " +e1.getClass());
-					this.log.println("Error al leer la ontología: " + e.getKey());
+					//this.log.println("Error al leer la ontologï¿½a: " + e.getKey() + " " + e1.getCause() + " " + e1.getMessage() + " " +e1.getClass());
+					this.log.println("Error al leer la ontologï¿½a: " + e.getKey());
 					this.log.println(URIbien);
 					//e1.printStackTrace();
 				}
@@ -331,12 +394,12 @@ public class Principal {
 
 				
 				try {
-					//File guardstar = new File("C:\\Users\\Álvaro\\Documents\\TFG\\alvaro\\intermedias\\STAR_"+ e.getKey().replaceAll("<|>|:|\\.|\\/", "")+".owl");
+					//File guardstar = new File("C:\\Users\\ï¿½lvaro\\Documents\\TFG\\alvaro\\intermedias\\STAR_"+ e.getKey().replaceAll("<|>|:|\\.|\\/", "")+".owl");
 					File guardstar = new File(this.rutaGuardado+"STAR_"+ e.getKey().replaceAll("<|>|:|\\.|\\/", "")+".owl");
-					//System.out.println("C:\\Users\\Álvaro\\Documents\\TFG\\alvaro\\intermedias\\STAR_"+ e.getKey().replaceAll("<|>|:|\\.|\\/", "")+".owl");
-					//File guardBOT = new File("C:\\Users\\Álvaro\\Documents\\TFG\\alvaro\\intermedias\\BOT_"+ e.getKey().replaceAll("<|>|:|\\.|\\/", "")+".owl");
+					//System.out.println("C:\\Users\\ï¿½lvaro\\Documents\\TFG\\alvaro\\intermedias\\STAR_"+ e.getKey().replaceAll("<|>|:|\\.|\\/", "")+".owl");
+					//File guardBOT = new File("C:\\Users\\ï¿½lvaro\\Documents\\TFG\\alvaro\\intermedias\\BOT_"+ e.getKey().replaceAll("<|>|:|\\.|\\/", "")+".owl");
 					File guardBOT = new File(this.rutaGuardado+"BOT_"+ e.getKey().replaceAll("<|>|:|\\.|\\/", "")+".owl");
-					//File guardTOP = new File("C:\\Users\\Álvaro\\Documents\\TFG\\alvaro\\intermedias\\TOP_"+ e.getKey().replaceAll("<|>|:|\\.|\\/", "")+".owl");
+					//File guardTOP = new File("C:\\Users\\ï¿½lvaro\\Documents\\TFG\\alvaro\\intermedias\\TOP_"+ e.getKey().replaceAll("<|>|:|\\.|\\/", "")+".owl");
 					File guardTOP = new File(this.rutaGuardado+"TOP_"+ e.getKey().replaceAll("<|>|:|\\.|\\/", "")+".owl");
 					System.out.println("Leyendo: " + e.getKey());
 					this.log.println("Leyendo: " + e.getKey());
@@ -441,11 +504,11 @@ public class Principal {
 	//catch (Throwable e1)
 				} catch (Throwable e1) {
 					// TODO Auto-generated catch block
-					//System.err.println("Error al leer la ontología: " + e.getKey() + " " + e1.getCause() + " " + e1.getMessage() + " " +e1.getClass());
-					System.err.println("Error al leer la ontología: " + e.getKey());
+					//System.err.println("Error al leer la ontologï¿½a: " + e.getKey() + " " + e1.getCause() + " " + e1.getMessage() + " " +e1.getClass());
+					System.err.println("Error al leer la ontologï¿½a: " + e.getKey());
 					System.err.println(URIbien);
-					//this.log.println("Error al leer la ontología: " + e.getKey() + " " + e1.getCause() + " " + e1.getMessage() + " " +e1.getClass());
-					this.log.println("Error al leer la ontología: " + e.getKey());
+					//this.log.println("Error al leer la ontologï¿½a: " + e.getKey() + " " + e1.getCause() + " " + e1.getMessage() + " " +e1.getClass());
+					this.log.println("Error al leer la ontologï¿½a: " + e.getKey());
 					this.log.println(URIbien);
 					//e1.printStackTrace();
 				}
@@ -474,12 +537,12 @@ public class Principal {
 		}
 	}
 	
-	public void generarEstadísticas (String metodo) {
+	public void generarEstadisticas (String metodo) {
 		
 		if (!metodo.equals("todas")) {
 			
-			System.out.println("Para completa la ontología la estrategia " + metodo + " ha introducido " + this.introducidosStar.size() + " axiomas.");
-			this.log.println("Para completa la ontología la estrategia " + metodo + " ha introducido " + this.introducidosStar.size() + " axiomas.");
+			System.out.println("Para completa la ontologï¿½a la estrategia " + metodo + " ha introducido " + this.introducidosStar.size() + " axiomas.");
+			this.log.println("Para completa la ontologï¿½a la estrategia " + metodo + " ha introducido " + this.introducidosStar.size() + " axiomas.");
 			System.out.println("La estrategia " + metodo + " ha tenido un tiempo acumulado de: " + this.tiempostar/1000 + " segundos.");
 			this.log.println("La estrategia " + metodo + " ha tenido un tiempo acumulado de: " + this.tiempostar/1000 + " segundos.");
 			this.log.flush();
@@ -490,27 +553,27 @@ public class Principal {
 			double porcentaje = ((t*100)/this.todos);
 		
 		
-			System.out.println("Con la estrategia star se han contabilizado " + this.introducidosStar.size() + " axiomas para que esta Ontología esté completa,"
+			System.out.println("Con la estrategia star se han contabilizado " + this.introducidosStar.size() + " axiomas para que esta Ontologï¿½a estï¿½ completa,"
 				+ " hemos introducido " + this.todos + " axiomas, lo que supone un " + porcentaje + "%");
-			this.log.println("Con la estrategia Star se han contabilizado " + this.introducidosStar.size() + " axiomas para que esta Ontología esté completa,"
+			this.log.println("Con la estrategia Star se han contabilizado " + this.introducidosStar.size() + " axiomas para que esta Ontologï¿½a estï¿½ completa,"
 				+ " hemos introducido " + this.todos + " axiomas, lo que supone un " + porcentaje + "%");
 			
 			
 			System.out.println("Entrados de BOT " + this.introducidosBot.size() + " y Entrados TOP " + this.introducidosTop.size());
 			this.log.println("Entrados de BOT " + this.introducidosBot.size() + " y Entrados TOP " + this.introducidosTop.size());
 			*/
-			System.out.println("Para completa la ontología la estrategia star ha introducido " + this.introducidosStar.size() + " axiomas.");
-			this.log.println("Para completa la ontología la estrategia star  ha introducido " + this.introducidosStar.size() + " axiomas.");
+			System.out.println("Para completa la ontologï¿½a la estrategia star ha introducido " + this.introducidosStar.size() + " axiomas.");
+			this.log.println("Para completa la ontologï¿½a la estrategia star  ha introducido " + this.introducidosStar.size() + " axiomas.");
 			System.out.println("La estrategia star ha tenido un tiempo acumulado de: " + this.tiempostar/1000 + " segundos.");
 			this.log.println("La estrategia star ha tenido un tiempo acumulado de: " + this.tiempostar/1000 + " segundos.");
 			
-			System.out.println("Para completa la ontología la estrategia BOT ha introducido " + this.introducidosBot.size() + " axiomas.");
-			this.log.println("Para completa la ontología la estrategia BOT ha introducido " + this.introducidosBot.size() + " axiomas.");
+			System.out.println("Para completa la ontologï¿½a la estrategia BOT ha introducido " + this.introducidosBot.size() + " axiomas.");
+			this.log.println("Para completa la ontologï¿½a la estrategia BOT ha introducido " + this.introducidosBot.size() + " axiomas.");
 			System.out.println("La estrategia bot ha tenido un tiempo acumulado de:" + this.tiempobot/1000 + " segundos.");
 			this.log.println("La estrategia bot ha tenido un tiempo acumulado de:" + this.tiempobot/1000 + " segundos.");
 			
-			System.out.println("Para completa la ontología la estrategia TOP ha introducido " + this.introducidosTop.size() + " axiomas.");
-			this.log.println("Para completa la ontología la estrategia TOP ha introducido " + this.introducidosTop.size() + " axiomas.");
+			System.out.println("Para completa la ontologï¿½a la estrategia TOP ha introducido " + this.introducidosTop.size() + " axiomas.");
+			this.log.println("Para completa la ontologï¿½a la estrategia TOP ha introducido " + this.introducidosTop.size() + " axiomas.");
 			System.out.println("La estrategia top ha tenido un tiempo acumulado de:" + this.tiempotop/1000 + " segundos.");
 			this.log.println("La estrategia top ha tenido un tiempo acumulado de:" + this.tiempotop/1000 + " segundos.");
 			
@@ -531,11 +594,11 @@ public class Principal {
 			this.log.println("Cargando razonador");
 			razonador.precomputeInferences();
 			if (razonador.isConsistent()) {
-				System.out.println("La ontología generada con "+metodo+" no tiene ninguna inconguencia y por tanto se ha completado correctamente");
-				this.log.println("La ontología generada con "+metodo+" no tiene ninguna inconguencia y por tanto se ha completado correctamente");
+				System.out.println("La ontologï¿½a generada con "+metodo+" no tiene ninguna inconguencia y por tanto se ha completado correctamente");
+				this.log.println("La ontologï¿½a generada con "+metodo+" no tiene ninguna inconguencia y por tanto se ha completado correctamente");
 			} else {
-				System.out.println("La ontología generada con "+metodo+" tiene incongruencias y por tanto no se ha completado correctamente");
-				this.log.println("La ontología generada con "+metodo+" tiene incongruencias y por tanto no se ha completado correctamente");
+				System.out.println("La ontologï¿½a generada con "+metodo+" tiene incongruencias y por tanto no se ha completado correctamente");
+				this.log.println("La ontologï¿½a generada con "+metodo+" tiene incongruencias y por tanto no se ha completado correctamente");
 			}
 		} else {
 			
@@ -549,11 +612,11 @@ public class Principal {
 			this.log.println("Cargando razonador Star");
 			razonadorstar.precomputeInferences();
 			if (razonadorstar.isConsistent()) {
-				System.out.println("La ontología generada con star no tiene ninguna inconguencia y por tanto se ha completado correctamente");
-				this.log.println("La ontología generada con star no tiene ninguna inconguencia y por tanto se ha completado correctamente");
+				System.out.println("La ontologï¿½a generada con star no tiene ninguna inconguencia y por tanto se ha completado correctamente");
+				this.log.println("La ontologï¿½a generada con star no tiene ninguna inconguencia y por tanto se ha completado correctamente");
 			} else {
-				System.out.println("La ontología generada con star tiene incongruencias y por tanto no se ha completado correctamente");
-				this.log.println("La ontología generada con star tiene incongruencias y por tanto no se ha completado correctamente");
+				System.out.println("La ontologï¿½a generada con star tiene incongruencias y por tanto no se ha completado correctamente");
+				this.log.println("La ontologï¿½a generada con star tiene incongruencias y por tanto no se ha completado correctamente");
 			}
 			
 			System.out.println("Generando Razonador Bot");
@@ -567,11 +630,11 @@ public class Principal {
 			razonadorbot.precomputeInferences();
 			
 			if (razonadorbot.isConsistent()) {
-				System.out.println("La ontología generada con bot no tiene ninguna inconguencia y por tanto se ha completado correctamente");
-				this.log.println("La ontología generada con bot no tiene ninguna inconguencia y por tanto se ha completado correctamente");
+				System.out.println("La ontologï¿½a generada con bot no tiene ninguna inconguencia y por tanto se ha completado correctamente");
+				this.log.println("La ontologï¿½a generada con bot no tiene ninguna inconguencia y por tanto se ha completado correctamente");
 			} else {
-				System.out.println("La ontología generada con bot tiene incongruencias y por tanto no se ha completado correctamente");
-				this.log.println("La ontología generada con bot tiene incongruencias y por tanto no se ha completado correctamente");
+				System.out.println("La ontologï¿½a generada con bot tiene incongruencias y por tanto no se ha completado correctamente");
+				this.log.println("La ontologï¿½a generada con bot tiene incongruencias y por tanto no se ha completado correctamente");
 			}
 			
 			System.out.println("Generando Razonador Top");
@@ -585,11 +648,11 @@ public class Principal {
 			razonadortop.precomputeInferences();
 			
 			if (razonadortop.isConsistent()) {
-				System.out.println("La ontología generada con Top no tiene ninguna inconguencia y por tanto se ha completado correctamente");
-				this.log.println("La ontología generada con Top no tiene ninguna inconguencia y por tanto se ha completado correctamente");
+				System.out.println("La ontologï¿½a generada con Top no tiene ninguna inconguencia y por tanto se ha completado correctamente");
+				this.log.println("La ontologï¿½a generada con Top no tiene ninguna inconguencia y por tanto se ha completado correctamente");
 			} else {
-				System.out.println("La ontología generada con Top tiene incongruencias y por tanto no se ha completado correctamente");
-				this.log.println("La ontología generada con Top tiene incongruencias y por tanto no se ha completado correctamente");
+				System.out.println("La ontologï¿½a generada con Top tiene incongruencias y por tanto no se ha completado correctamente");
+				this.log.println("La ontologï¿½a generada con Top tiene incongruencias y por tanto no se ha completado correctamente");
 			}
 			
 		}

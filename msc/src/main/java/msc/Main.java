@@ -22,7 +22,7 @@ import org.semanticweb.owlapi.model.OWLOntologyStorageException;
 public class Main implements Runnable{
 
 	
-	@Parameters(index = "0", description = "Esto es la URI de la ontologï¿½a a completar. Si deseas que sea una ruta utiliza -f o --file")
+	@Parameters(index = "0", description = "Esto es la URI de la ontologia a completar. Si deseas que sea una ruta utiliza -f o --file")
 	private String entrada;
 	
 	@Parameters(index = "1", description = "Esto es la ruta del directorio donde guardar los resultados")
@@ -31,8 +31,12 @@ public class Main implements Runnable{
 	@Parameters(index = "2", description = "Indica que estrategia utilizar, las opciones son Star, BOT, TOP o Todas")
 	private String metodo;
 	
-	@Option(names = {"-f", "-F", "--file", "--File"}, description = "Introduce esta opciï¿½n si vas a introducir la ontologï¿½a con la ruta de un fichero")
+	@Option(names = {"-f", "-F", "--file", "--File"}, description = "Introduce esta opcion si vas a introducir la ontologia con la ruta de un fichero")
 	private boolean fichero = true;
+	
+	@Option(names = { "-t", "--time" }, paramLabel = "Horas", description = "Numero de horas máximo para la extracción de cada ontología. Si una extracción"
+			+ "no se realiza en el tiempo pasado por este parametro se pasara a la siguiente.")
+    int horas = 2;
 	
 	
 	public static void main(String[] args) {
@@ -43,6 +47,7 @@ public class Main implements Runnable{
 
 	public void run() {
 	
+		
 	// TODO Auto-generated method stub
 			Principal prin = null;
 			PrintWriter log;
@@ -62,25 +67,25 @@ public class Main implements Runnable{
 			//File ontologia = new File("C:\\Users\\ï¿½lvaro\\Documents\\TFG\\alvaro\\doidn.owl");
 			//File ontologia = new File("C:\\Users\\ï¿½lvaro\\Documents\\TFG\\alvaro\\OMIM.ttl");
 			
-			log.println("Iniciando ejecuciï¿½n");
+			log.println("Iniciando ejecucion");
 			
 			if (fichero) {
 				try {
-					prin = new Principal(entrada+".owl", log, guardado);
+					prin = new Principal(entrada+".owl", log, guardado, horas);
 				} catch (OWLOntologyCreationException e) {
 					// TODO Auto-generated catch block
-					System.err.println("Error al leer la ontologï¿½a pasada como parï¿½metro, por favor, revise el fichero o la URI utilizada");
-					log.println("Error al leer la ontologï¿½a pasada como parï¿½metro, por favor, revise el fichero o la URI utilizada");
+					System.err.println("Error al leer la ontologia pasada como parametro, por favor, revise el fichero o la URI utilizada");
+					log.println("Error al leer la ontologia pasada como parametro, por favor, revise el fichero o la URI utilizada");
 					return;
 				}
 			} else {
 				File ontologia = new File(entrada);								
 			try {
-				prin = new Principal(ontologia, log, guardado);
+				prin = new Principal(ontologia, log, guardado, horas);
 			} catch (OWLOntologyCreationException e) {
 				// TODO Auto-generated catch block
-					System.err.println("Error al leer la ontologï¿½a pasada como parï¿½metro, por favor, revise el fichero o la URI utilizada");
-					log.println("Error al leer la ontologï¿½a pasada como parï¿½metro, por favor, revise el fichero o la URI utilizada");
+					System.err.println("Error al leer la ontologia pasada como parametro, por favor, revise el fichero o la URI utilizada");
+					log.println("Error al leer la ontologia pasada como parametro, por favor, revise el fichero o la URI utilizada");
 					return;
 				}
 			}
@@ -121,7 +126,7 @@ public class Main implements Runnable{
 				prin.GuardaOntologiaResultado(metodominus);
 			} catch (OWLOntologyStorageException e) {
 				// TODO Auto-generated catch block
-				System.err.println("Error al guardar la ontologï¿½a");
+				System.err.println("Error al guardar la ontologia");
 			} catch (FileNotFoundException e) {
 				// TODO Auto-generated catch block
 				System.err.println("Error generando los ficheros de guardado");

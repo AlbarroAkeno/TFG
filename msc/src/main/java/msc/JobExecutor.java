@@ -12,10 +12,12 @@ import org.semanticweb.owlapi.model.OWLAxiom;
 
 public class JobExecutor implements Callable<Set<OWLAxiom>>{
 	private TareaObtenModulo tarea;
+	private int tiempo;
 	
-	public JobExecutor(TareaObtenModulo tarea) {
+	public JobExecutor(TareaObtenModulo tarea, int tiempo) {
 		super();
 		this.tarea = tarea;
+		this.tiempo = tiempo;
 	}
 
 	@Override
@@ -23,9 +25,11 @@ public class JobExecutor implements Callable<Set<OWLAxiom>>{
 		Set<OWLAxiom> axioms = null;
 		ExecutorService exec = Executors.newSingleThreadExecutor();
 		try {
-			axioms = exec.submit(this.tarea).get(2, TimeUnit.HOURS);
+			axioms = exec.submit(this.tarea).get(this.tiempo, TimeUnit.HOURS);
 		} catch (InterruptedException | ExecutionException | TimeoutException e) {
-			e.printStackTrace();
+			//e.printStackTrace();
+			System.out.println("Tiempo excedido extrayendo " + this.tarea.getIriOntologia() + " conla estrategia " + this.tarea.getMetodo());
+			this.tarea.getLog().println("Tiempo excedido extrayendo " + this.tarea.getIriOntologia() + " conla estrategia " + this.tarea.getMetodo());
 		}
 		
 		exec.shutdown();

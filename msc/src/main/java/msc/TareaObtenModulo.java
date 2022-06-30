@@ -81,4 +81,22 @@ public class TareaObtenModulo implements Callable<Set<OWLAxiom>>{
 	}
 
 
+
+	public ModuleType getMetodo() {
+		return metodo;
+	}
+
+
+
+	public IRI getIriOntologia() {
+		return iriOntologia;
+	}
+
+
+
+	public PrintWriter getLog() {
+		return log;
+	}
+
+
 }

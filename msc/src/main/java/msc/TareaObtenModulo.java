@@ -15,6 +15,8 @@ import org.semanticweb.owlapi.model.OWLEntity;
 import org.semanticweb.owlapi.model.OWLOntology;
 import org.semanticweb.owlapi.model.OWLOntologyManager;
 
+import java.util.concurrent.atomic.LongAdder;
+
 import uk.ac.manchester.cs.owlapi.modularity.ModuleType;
 import uk.ac.manchester.cs.owlapi.modularity.SyntacticLocalityModuleExtractor;
 
@@ -24,11 +26,11 @@ public class TareaObtenModulo implements Callable<Set<OWLAxiom>>{
 	private Set<OWLEntity> signature;
 	private PrintWriter log;
 	private File guardmol;
-	private Long tiempo;
+	private LongAdder tiempo;
 	
 	
 	
-	public TareaObtenModulo(ModuleType metodo, IRI iriOntologia, Set<OWLEntity> signature, PrintWriter log, File guardmol, Long tiempo) {
+	public TareaObtenModulo(ModuleType metodo, IRI iriOntologia, Set<OWLEntity> signature, PrintWriter log, File guardmol, LongAdder tiempo) {
 		super();
 		this.metodo = metodo;
 		this.iriOntologia = iriOntologia;
@@ -71,11 +73,13 @@ public class TareaObtenModulo implements Callable<Set<OWLAxiom>>{
 		this.log.println("Se han extraido " + modulo.getAxiomCount() + " axiomas y " + modulo.getClassesInSignature().size() + " entidades"
 				+ " con " + metodo.toString() + " de " + this.iriOntologia.toQuotedString());
 		
-		this.tiempo += (end - start);
+		this.tiempo.add(end - start);
 		
 		owlOntologyManager.saveOntology(modulo, new FunctionalSyntaxDocumentFormat(),new FileOutputStream(this.guardmol));
 		
 		this.log.flush();
+		
+		owlOntologyManager.removeOntology(ontologia);
 		
 		return modulo.axioms().collect(Collectors.toSet());
 	}

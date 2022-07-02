@@ -28,8 +28,8 @@ public class JobExecutor implements Callable<Set<OWLAxiom>>{
 			axioms = exec.submit(this.tarea).get(this.tiempo, TimeUnit.HOURS);
 		} catch (InterruptedException | ExecutionException | TimeoutException e) {
 			//e.printStackTrace();
-			System.out.println("Tiempo excedido extrayendo " + this.tarea.getIriOntologia() + " conla estrategia " + this.tarea.getMetodo());
-			this.tarea.getLog().println("Tiempo excedido extrayendo " + this.tarea.getIriOntologia() + " conla estrategia " + this.tarea.getMetodo());
+			System.out.println("Tiempo excedido extrayendo " + this.tarea.getIriOntologia() + " con la estrategia " + this.tarea.getMetodo() + e.getMessage());
+			this.tarea.getLog().println("Tiempo excedido extrayendo " + this.tarea.getIriOntologia() + " con la estrategia " + this.tarea.getMetodo() + e.getMessage());
 		}
 		
 		exec.shutdown();

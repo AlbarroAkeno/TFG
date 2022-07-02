@@ -68,6 +68,7 @@ public class Main implements Runnable{
 			//File ontologia = new File("C:\\Users\\ï¿½lvaro\\Documents\\TFG\\alvaro\\OMIM.ttl");
 			
 			log.println("Iniciando ejecucion");
+			log.println("Se ha extablecido " + horas + " horas como tiempo limite para extarer cada ontología");
 			
 			if (fichero) {
 				try {

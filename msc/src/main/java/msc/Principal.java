@@ -15,6 +15,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.LongAdder;
 
 import org.semanticweb.HermiT.Configuration;
 import org.semanticweb.HermiT.Reasoner;
@@ -48,25 +49,15 @@ public class Principal {
 	private Set<OWLAxiom> introducidosStar;
 	private Set<OWLAxiom> introducidosBot;
 	private Set<OWLAxiom> introducidosTop;
-	//private Set<OWLEntity> conjuntoOriginal;
-	
-	//File doid = new File("C:\\Users\\�lvaro\\Documents\\TFG\\alvaro\\doid.owl");
-	//PrintWriter pruebasignature = null;
-	//PrintWriter pruebasmap = null;
-	//File resultado = new File("C:\\Users\\�lvaro\\Documents\\TFG\\alvaro\\completo.owl");
-	//OWLOntology result = null;
-	//File resultadosin = new File("C:\\Users\\�lvaro\\Documents\\TFG\\alvaro\\sindoid.owl");
-	//OWLOntology resultsin = null;
+
 	private TreeMap<String, HashSet<OWLEntity>> mapeo;
 	private TreeMap<String, Integer> axiomas;
 	private int todos;
-	private Long tiempostar;
-	private Long tiempobot;
-	private Long tiempotop;
+	private LongAdder tiempostar;
+	private LongAdder tiempobot;
+	private LongAdder tiempotop;
 	private String rutaGuardado;
-	//private String metod;
-	
-	//private String actual;
+
 	PrintWriter log = null;
 	private int tiempo;
 	
@@ -115,9 +106,9 @@ public class Principal {
 		this.introducidosTop =  new HashSet<OWLAxiom>();
 		this.axiomas = new TreeMap<String, Integer>();
 		this.todos = 0;
-		this.tiempostar = new Long(0);
-		this.tiempobot = new Long(0);
-		this.tiempotop = new Long(0);
+		this.tiempostar = new LongAdder();
+		this.tiempobot = new LongAdder();
+		this.tiempotop = new LongAdder();
 			
 	}
 	
@@ -214,7 +205,7 @@ public class Principal {
 	
 	public int completaOntologiaMetodo(String metodo) {
 		ModuleType m = null;
-		Long tiempo = null;
+		LongAdder tiempo = null;
 		Set<OWLAxiom> conjunto = null;
 		
 		//this.metod = metodo;
@@ -330,30 +321,44 @@ public class Principal {
 	
 	public void generarEstadisticas (String metodo) {
 		
+		long tiempoTotal = 0;
+		int introducidosTotal = 0;
+		
 		if (!metodo.equals("todas")) {
 			
-			System.out.println("Para completar la ontologia la estrategia " + metodo + " ha introducido " + this.introducidosStar.size() + " axiomas.");
-			this.log.println("Para completar la ontologia la estrategia " + metodo + " ha introducido " + this.introducidosStar.size() + " axiomas.");
-			System.out.println("La estrategia " + metodo + " ha tenido un tiempo acumulado de: " + this.tiempostar/1000 + " segundos.");
-			this.log.println("La estrategia " + metodo + " ha tenido un tiempo acumulado de: " + this.tiempostar/1000 + " segundos.");
+			if (metodo.equals("star")) {
+				tiempoTotal = this.tiempostar.longValue()/1000;
+				introducidosTotal = this.introducidosStar.size();
+			} else if (metodo.equals("bot")) {
+				tiempoTotal = this.tiempobot.longValue()/1000;
+				introducidosTotal = this.introducidosBot.size();
+			} else if (metodo.equals("top")) {
+				tiempoTotal = this.tiempobot.longValue()/1000;
+				introducidosTotal = this.introducidosBot.size();
+			}
+			
+			System.out.println("Para completar la ontologia la estrategia " + metodo + " ha introducido " + introducidosTotal + " axiomas.");
+			this.log.println("Para completar la ontologia la estrategia " + metodo + " ha introducido " + introducidosTotal + " axiomas.");
+			System.out.println("La estrategia " + metodo + " ha tenido un tiempo acumulado de: " + tiempoTotal + " segundos.");
+			this.log.println("La estrategia " + metodo + " ha tenido un tiempo acumulado de: " + tiempoTotal + " segundos.");
 			this.log.flush();
 			
 		} else {
 
 			System.out.println("Para completa la ontologia la estrategia star ha introducido " + this.introducidosStar.size() + " axiomas.");
 			this.log.println("Para completa la ontologia la estrategia star  ha introducido " + this.introducidosStar.size() + " axiomas.");
-			System.out.println("La estrategia star ha tenido un tiempo acumulado de: " + this.tiempostar/1000 + " segundos.");
-			this.log.println("La estrategia star ha tenido un tiempo acumulado de: " + this.tiempostar/1000 + " segundos.");
+			System.out.println("La estrategia star ha tenido un tiempo acumulado de: " + this.tiempostar.longValue()/1000 + " segundos.");
+			this.log.println("La estrategia star ha tenido un tiempo acumulado de: " + this.tiempostar.longValue()/1000 + " segundos.");
 			
 			System.out.println("Para completa la ontologia la estrategia BOT ha introducido " + this.introducidosBot.size() + " axiomas.");
 			this.log.println("Para completa la ontologia la estrategia BOT ha introducido " + this.introducidosBot.size() + " axiomas.");
-			System.out.println("La estrategia bot ha tenido un tiempo acumulado de:" + this.tiempobot/1000 + " segundos.");
-			this.log.println("La estrategia bot ha tenido un tiempo acumulado de:" + this.tiempobot/1000 + " segundos.");
+			System.out.println("La estrategia bot ha tenido un tiempo acumulado de:" + this.tiempobot.longValue()/1000 + " segundos.");
+			this.log.println("La estrategia bot ha tenido un tiempo acumulado de:" + this.tiempobot.longValue()/1000 + " segundos.");
 			
 			System.out.println("Para completa la ontologia la estrategia TOP ha introducido " + this.introducidosTop.size() + " axiomas.");
 			this.log.println("Para completa la ontologia la estrategia TOP ha introducido " + this.introducidosTop.size() + " axiomas.");
-			System.out.println("La estrategia top ha tenido un tiempo acumulado de:" + this.tiempotop/1000 + " segundos.");
-			this.log.println("La estrategia top ha tenido un tiempo acumulado de:" + this.tiempotop/1000 + " segundos.");
+			System.out.println("La estrategia top ha tenido un tiempo acumulado de:" + this.tiempotop.longValue()/1000 + " segundos.");
+			this.log.println("La estrategia top ha tenido un tiempo acumulado de:" + this.tiempotop.longValue()/1000 + " segundos.");
 			
 			this.log.flush();
 		}
